@@ -17,15 +17,17 @@ class Model(tf.keras.Model):
         # Dense3, (None, 6), 390 remember to adjust 6 for however many different viruses we are considering
 
         self.model = tf.keras.Sequential(layers=[
-            tf.keras.layers.Embedding(input_dim=16, output_dim=8, input_length=1000), # why is input_dim = 16?
-            tf.keras.layers.Conv1D(filters=128, kernel_size=2, activation='relu'), # param num should be 3200, right now 2176 (128 * 17), 3200 (128 * 25)
+            tf.keras.layers.Embedding(input_dim=16, output_dim=8, input_length=1000), # why is input_dim = 16? #should kernel size be 2 * one hot size?
+            tf.keras.layers.Conv1D(filters=128, kernel_size=2, padding='same', activation='relu'), # param num should be 3200, right now 2176 (128 * 17), 3200 (128 * 25)
+            tf.keras.layers.MaxPool1D(),
+            tf.keras.layers.Conv1D(filters=64, kernel_size=2, padding='same', activation='relu'),
+            tf.keras.layers.MaxPool1D(),
+            # tf.keras.layers.Conv1D(filters=32, kernel_size=2, padding='same', activation='relu'), # added third conv layer
             # tf.keras.layers.MaxPool1D(),
-            # tf.keras.layers.Conv1D(filters=64, kernel_size=2, activation='relu'),
-            # tf.keras.layers.MaxPool1D(),
-            # tf.keras.layers.Flatten(),
-            # tf.keras.layers.Dense(activation='relu'),
-            # tf.keras.layers.Dense(activation='relu'),
-            # tf.keras.layers.Dense(activation='softmax')
+            tf.keras.layers.Flatten(),
+            tf.keras.layers.Dense(128, activation='relu'),
+            tf.keras.layers.Dense(64, activation='relu'),
+            tf.keras.layers.Dense(6, activation='softmax')
         ])
 
         self.model.summary()
