@@ -12,7 +12,7 @@ def get_data(file_name):
     and tensor of labels.
     :param file_name: path to .fasta file
 
-    :return: onehot float32 RaggedTensor
+    :return: (onehot float32 RaggedTensor, number of sequences)
 
     one_hot scheme:
     "A" : 0, "C" : 1, "G" : 2, "T" : 3, "N" : 4
@@ -99,15 +99,30 @@ def get_full_data(file_names, train_test_split = .8):
     train_data, test_data=  all_data[:split_ind], all_data[split_ind:]
     train_labels, test_labels = all_labels[:split_ind], all_labels[split_ind:]
 
-    #print(tf.shape(train_data))
+    print(tf.shape(train_data))
     #print(tf.shape(test_data))
-    #print(tf.shape(train_labels))
-    #print(tf.shape(test_labels))
+    print(tf.shape(train_labels))
+    #print(tf.shape(test_labels)) 
 
     return train_data, test_data, train_labels, test_labels
+'''
+sequencefiles = ["fasta_data_new/sarscov2.fasta",
+             "fasta_data_new/mers.fasta", 
+             "fasta_data_new/sars.fasta", 
+             "fasta_data_new/dengue.fasta", 
+             "fasta_data_new/influenzaseqs.fasta"
+             ]
+'''
 
-        
-get_full_data(["fasta_data/sarscov2.fasta", "fasta_data/influenzaseqs.fasta"])
-
+'''
+sequencefiles = ["fasta_samples/sarscov2.fasta",
+             "fasta_samples/mers.fasta", 
+             "fasta_samples/sarscov1.fasta", 
+             "fasta_samples/dengue.fasta", 
+             "fasta_samples/hepatitis.fasta",
+             "fasta_samples/influenza.fasta"
+             ]
+'''
+#get_full_data(sequencefiles)
 
 
