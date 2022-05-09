@@ -100,19 +100,13 @@ def test(model, test_inputs, test_labels):
     """
     for b in range(0, len(test_labels), model.batch_size):
         accuracies = []
-        with tf.GradientTape() as tape:
-            # generate a batch
-            (batch_inputs, batch_labels) = (test_inputs[b: b + model.batch_size], test_labels[b: b + model.batch_size])
-            # forward pass
-            probs = model.call(batch_inputs)
-            # calculate loss
-            loss = model.loss_function(batch_labels, probs)
-            # get accuracies
-            accuracies.append(model.accuracy(probs, batch_labels))
-            # calculate gradients
-        gradients = tape.gradient(loss, model.trainable_variables)
-        # update trainable variables
-        model.optimizer.apply_gradients(zip(gradients, model.trainable_variables))
+        # generate a batch
+        (batch_inputs, batch_labels) = (test_inputs[b: b + model.batch_size], test_labels[b: b + model.batch_size])
+        # forward pass
+        probs = model.call(batch_inputs)
+        # get accuracies
+        accuracies.append(model.accuracy(probs, batch_labels))
+        # calculate gradients
     return tf.reduce_mean(accuracies)
 
 def main():
@@ -127,13 +121,16 @@ def main():
              ]
     (train_data, test_data, train_labels, test_labels) = get_full_data(sequencefiles)
     
-#     with open("pickeled_data.pk", 'rb') as fi:
-#     # dump your data into the file
-#        pickle.dump((train_data, train_labels, test_data, test_labels), fi)
-#        (train_data, test_data, train_labels, test_labels) = pickle.load(fi)
+    # with open("pickeled_data.pk", 'rb') as fi:
+    # # dump your data into the file
+    #    #pickle.dump((train_data, train_labels, test_data, test_labels), fi)
+    #    (train_data, test_data, train_labels, test_labels) = pickle.load(fi)
 
     for e in range(epochs):
+        min = np.amin(train_labels)
+        max = np.amax(train_labels)
         train(model, train_data, train_labels)
+        
         accuracy = test(model, test_data, test_labels)
         print(accuracy)
     
