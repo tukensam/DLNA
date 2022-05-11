@@ -5,13 +5,13 @@ import pickle
 from realpreprocess import get_full_data
 
 class Model(tf.keras.Model):
-    def __init__(self, model_type, num_classes):
+    def __init__(self, num_classes):
         super(Model, self).__init__()
         self.loss = tf.keras.losses.CategoricalCrossentropy()
-        self.optimizer = tf.keras.optimizers.Adam(learning_rate = 0.001)       
+        self.optimizer = tf.keras.optimizers.Adam(learning_rate = 0.001)
+        #self.accuracy = tf.keras.metrics.CategoricalAccuracy()       
         self.batch_size = 1000
         self.embedding_size = 100
-        self.model_type = model_type
         self.num_classes = num_classes
         self.rnn_size = 100
         self.h1 = 250
@@ -25,9 +25,6 @@ class Model(tf.keras.Model):
             tf.keras.layers.MaxPool1D(),
             tf.keras.layers.Flatten()
         ])
-        self.LSTM_layer = tf.keras.layers.LSTM(self.rnn_size, return_sequences=True, return_state=True)
-        self.biLSTM_layer = tf.keras.layers.Bidirectional(
-            tf.keras.layers.LSTM(self.rnn_size, return_sequences=True, return_state=True)) 
         self.layers2 = tf.keras.Sequential(layers=[
             tf.keras.layers.Dense(self.h1, activation='relu'),
             tf.keras.layers.Dense(self.h2, activation='relu'),
@@ -41,30 +38,60 @@ class Model(tf.keras.Model):
         :return:  the batch element probabilities as a tensor
         """
         x = self.layers1(x)
-        # If using a special model type, do that here
-        if self.model_type == "LSTM":
-            x, _, _ = self.LSTM_layer(x)
-        elif self.model_type == "biLSTM":
-            x, _, _ = self.biLSTM_layer(x)
-        
         probs = self.layers2(x)
         return probs
-    
 
-    def accuracy(self, logits, labels):
-        """
-        Calculates the model's prediction accuracy by comparing
-        logits to correct labels – no need to modify this.
-        
-        :param logits: a matrix of size (num_inputs, self.num_classes); during training, this will be (batch_size, self.num_classes)
-        containing the result of multiple convolution and feed forward layers
-        :param labels: matrix of size (num_labels, self.num_classes) containing the answers, during training, this will be (batch_size, self.num_classes)
-        
-        :return: the accuracy of the model as a Tensor
-        """
+    def accuracy(self, labels, logits):
+        logits_1 = []
+        logits_2 = []
+        logits_3 = []
+        logits_4 = []
+        logits_5 = []
+        logits_6 = []
+        labels_1 = []
+        labels_2 = []
+        labels_3 = []
+        labels_4 = []
+        labels_5 = []
+        labels_6 = []
+        argmax_labels = tf.argmax(labels, 1)
+        for i in range(len(labels)):
+            if argmax_labels[i] == 0:
+                logits_1.append(logits[i])
+                labels_1.append(labels[i])
+            elif argmax_labels[i] == 1:
+                logits_2.append(logits[i])
+                labels_2.append(labels[i])
+            elif argmax_labels[i] == 2:
+                logits_3.append(logits[i])
+                labels_3.append(labels[i])
+            elif argmax_labels[i] == 3:
+                logits_4.append(logits[i])
+                labels_4.append(labels[i])
+            elif argmax_labels[i] == 4:
+                logits_5.append(logits[i])
+                labels_5.append(labels[i])
+            elif argmax_labels[i] == 5:
+                logits_6.append(logits[i])
+                labels_6.append(labels[i])
+        corr_pred1 = tf.equal(tf.argmax(logits_1, 1), tf.argmax(labels_1, 1))
+        corr_pred2 = tf.equal(tf.argmax(logits_2, 1), tf.argmax(labels_2, 1))
+        corr_pred3 = tf.equal(tf.argmax(logits_3, 1), tf.argmax(labels_3, 1))
+        corr_pred4 = tf.equal(tf.argmax(logits_4, 1), tf.argmax(labels_4, 1))
+        corr_pred5 = tf.equal(tf.argmax(logits_5, 1), tf.argmax(labels_5, 1))
+        corr_pred6 = tf.equal(tf.argmax(logits_6, 1), tf.argmax(labels_6, 1))
+
         correct_predictions = tf.equal(tf.argmax(logits, 1), tf.argmax(labels, 1))
-        return tf.reduce_mean(tf.cast(correct_predictions, tf.float32))
+        return np.array([tf.reduce_mean(tf.cast(corr_pred1, tf.float32)),
+            tf.reduce_mean(tf.cast(corr_pred2, tf.float32)),
+            tf.reduce_mean(tf.cast(corr_pred3, tf.float32)),
+            tf.reduce_mean(tf.cast(corr_pred4, tf.float32)),
+            tf.reduce_mean(tf.cast(corr_pred5, tf.float32)),
+            tf.reduce_mean(tf.cast(corr_pred6, tf.float32)),
+            tf.reduce_mean(tf.cast(correct_predictions, tf.float32))])
 
+        
+    
 def train(model, train_inputs, train_labels):
     """
     Runs through one epoch
@@ -99,18 +126,20 @@ def test(model, test_inputs, test_labels):
     :return: Average accuracy across the epoch
     """
     for b in range(0, len(test_labels), model.batch_size):
-        accuracies = []
+        accuracies = np.zeros([model.num_classes + 1])
+        n = 0
         # generate a batch
         (batch_inputs, batch_labels) = (test_inputs[b: b + model.batch_size], test_labels[b: b + model.batch_size])
         # forward pass
         probs = model.call(batch_inputs)
         # get accuracies
-        accuracies.append(model.accuracy(probs, batch_labels))
-        # calculate gradients
-    return tf.reduce_mean(accuracies)
+        accuracies += model.accuracy(batch_labels, probs)
+        n += 1
+
+    return accuracies/n
 
 def main():
-    model = Model("CNN", 6)
+    model = Model(6)
     epochs = 1
     sequencefiles = ["C:/Users/moasi/Desktop/CSCI_1470/DLNA/tukensam DLNA main code/fasta_data_new/sarscov2.fasta",
              "C:/Users/moasi/Desktop/CSCI_1470/DLNA/tukensam DLNA main code/fasta_data_new/mers.fasta", 
@@ -120,19 +149,25 @@ def main():
              "C:/Users/moasi/Desktop/CSCI_1470/DLNA/tukensam DLNA main code/fasta_data_new/influenza.fasta"
              ]
     (train_data, test_data, train_labels, test_labels) = get_full_data(sequencefiles)
-    
+    train_labels = tf.one_hot(train_labels, 6)
+    test_labels = tf.one_hot(test_labels, 6)
+
     # with open("pickeled_data.pk", 'rb') as fi:
     # # dump your data into the file
     #    #pickle.dump((train_data, train_labels, test_data, test_labels), fi)
     #    (train_data, test_data, train_labels, test_labels) = pickle.load(fi)
 
     for e in range(epochs):
-        min = np.amin(train_labels)
-        max = np.amax(train_labels)
         train(model, train_data, train_labels)
         
         accuracy = test(model, test_data, test_labels)
-        print(accuracy)
+        print("SARS CoV 2 accuracy: " + str(accuracy[0]))
+        print("MERS accuracy: " + str(accuracy[1]))
+        print("SARS CoV 1 accuracy: " + str(accuracy[2]))
+        print("Dengue accuracy: " + str(accuracy[3]))
+        print("Hepatitis accuracy: " + str(accuracy[4]))
+        print("Influenza accuracy: " + str(accuracy[5]))
+        print("Total accuracy: " + str(accuracy[6]))
     
     return
 
