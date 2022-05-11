@@ -24,7 +24,7 @@ def get_data(file_name, seq_size = 300):
     num_examples = 0
     for fasta in parsed:
         seqstr = str(fasta.seq)
-        seqstr = seqstr[np.random.randint(0,300):]
+        seqstr = seqstr[np.random.randint(0,seq_size):]
         newseqstr = seqstr[: len(seqstr) - (len(seqstr) % seq_size)]
         for i in range(len(newseqstr) // seq_size):
             seqlist.append(newseqstr[ i * seq_size: (i + 1) * seq_size])
@@ -120,7 +120,7 @@ def get_full_data(file_names, train_test_split = .8, seq_size = 300):
     return train_data, test_data, train_labels, test_labels
 
 #How to call in model:
-
+'''
 sequencefiles = ["fasta_data_new/sarscov2.fasta",
              "fasta_data_new/mers.fasta", 
              "fasta_data_new/sarscov1.fasta", 
@@ -129,4 +129,4 @@ sequencefiles = ["fasta_data_new/sarscov2.fasta",
              "fasta_data_new/influenza.fasta"
              ]
 get_full_data(sequencefiles)
-
+'''
