@@ -20,10 +20,14 @@ def random_sample_data(virus, num_seqs):
     shuffle(seqs)
 
     with open(f"fasta_samples/{virus}.fasta", "w") as file:
-        SeqIO.write(seqs[:100], file, "fasta")
+        SeqIO.write(seqs[:num_seqs], file, "fasta")
     
-num_seqs = 100
-viruses = ["dengue", "hepatitis", "influenza", "mers", "sarscov1", "sarscov2"]
+def main():
+    num_seqs = 1000
+    viruses = ["dengue", "hepatitis", "influenza", "mers", "sarscov1", "sarscov2"]
 
-for virus in viruses:
-    random_sample_data(virus, num_seqs)
+    for virus in viruses:
+        random_sample_data(virus, num_seqs)
+
+if __name__ == "__main__":
+    main()
