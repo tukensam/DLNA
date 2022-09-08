@@ -2,14 +2,15 @@ import numpy as np
 import tensorflow as tf
 import pickle
 
-from realpreprocess import get_full_data
+from preprocess_final import get_full_data
 
 class Model(tf.keras.Model):
     def __init__(self, num_classes):
         super(Model, self).__init__()
         self.loss = tf.keras.losses.CategoricalCrossentropy()
         self.optimizer = tf.keras.optimizers.Adam(learning_rate = 0.001)
-        #self.accuracy = tf.keras.metrics.CategoricalAccuracy()       
+        self.categorical_accuracy = tf.keras.metrics.CategoricalAccuracy()
+        self.auroc = tf.keras.metrics.AUC()   
         self.batch_size = 1000
         self.embedding_size = 100
         self.num_classes = num_classes
@@ -125,6 +126,7 @@ def test(model, test_inputs, test_labels):
     :param train_labels:
     :return: Average accuracy across the epoch
     """
+    confusion_matrix = np.zeros([model.num_classes, model.num_classes])
     for b in range(0, len(test_labels), model.batch_size):
         accuracies = np.zeros([model.num_classes + 1])
         n = 0
@@ -133,13 +135,17 @@ def test(model, test_inputs, test_labels):
         # forward pass
         probs = model.call(batch_inputs)
         # get accuracies
-        accuracies += model.accuracy(batch_labels, probs)
-        n += 1
+        # accuracies += model.accuracy(batch_labels, probs)
+        model.auroc.update_state(batch_labels, probs)
+        model.categorical_accuracy.update_state(batch_labels, probs)
+        confusion_matrix = confusion_matrix + tf.math.confusion_matrix(batch_labels.numpy().argmax(axis = 1), probs.numpy().argmax(axis = 1), model.num_classes)
+        #n += 1
 
-    return accuracies/n
+    return confusion_matrix #accuracies/n
 
 def main():
     model = Model(6)
+
     epochs = 1
     sequencefiles = ["C:/Users/moasi/Desktop/CSCI_1470/DLNA/tukensam DLNA main code/fasta_data_new/sarscov2.fasta",
              "C:/Users/moasi/Desktop/CSCI_1470/DLNA/tukensam DLNA main code/fasta_data_new/mers.fasta", 
@@ -148,26 +154,31 @@ def main():
              "C:/Users/moasi/Desktop/CSCI_1470/DLNA/tukensam DLNA main code/fasta_data_new/hepatitis.fasta",
              "C:/Users/moasi/Desktop/CSCI_1470/DLNA/tukensam DLNA main code/fasta_data_new/influenza.fasta"
              ]
-    (train_data, test_data, train_labels, test_labels) = get_full_data(sequencefiles)
-    train_labels = tf.one_hot(train_labels, 6)
-    test_labels = tf.one_hot(test_labels, 6)
+    # (train_data, test_data, train_labels, test_labels) = get_full_data(sequencefiles)
+    # train_labels = tf.one_hot(train_labels, 6)
+    # test_labels = tf.one_hot(test_labels, 6)
 
-    # with open("pickeled_data.pk", 'rb') as fi:
+    with open("pickeled_data.pk", 'rb') as fi:
     # # dump your data into the file
-    #    #pickle.dump((train_data, train_labels, test_data, test_labels), fi)
-    #    (train_data, test_data, train_labels, test_labels) = pickle.load(fi)
+        #pickle.dump((train_data, test_data, train_labels, test_labels), fi)
+        (train_data, test_data, train_labels, test_labels) = pickle.load(fi)
 
     for e in range(epochs):
         train(model, train_data, train_labels)
         
-        accuracy = test(model, test_data, test_labels)
-        print("SARS CoV 2 accuracy: " + str(accuracy[0]))
-        print("MERS accuracy: " + str(accuracy[1]))
-        print("SARS CoV 1 accuracy: " + str(accuracy[2]))
-        print("Dengue accuracy: " + str(accuracy[3]))
-        print("Hepatitis accuracy: " + str(accuracy[4]))
-        print("Influenza accuracy: " + str(accuracy[5]))
-        print("Total accuracy: " + str(accuracy[6]))
+        # accuracy = test(model, test_data, test_labels)
+        confusion_matrix = test(model, test_data, test_labels)
+        # print("SARS CoV 2 accuracy: " + str(accuracy[0]))
+        # print("MERS accuracy: " + str(accuracy[1]))
+        # print("SARS CoV 1 accuracy: " + str(accuracy[2]))
+        # print("Dengue accuracy: " + str(accuracy[3]))
+        # print("Hepatitis accuracy: " + str(accuracy[4]))
+        # print("Influenza accuracy: " + str(accuracy[5]))
+        # print("Total accuracy: " + str(accuracy[6]))
+        print("Accuracy: " + str(model.categorical_accuracy.result().numpy()))
+        print("AUROC: " + str(model.auroc.result().numpy()))
+        print("Confusion Matrix: " + str(confusion_matrix))
+        
     
     return
 
