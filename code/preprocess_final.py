@@ -63,8 +63,8 @@ def get_full_data(file_names, train_test_split = .8, seq_size = 300):
         
         subsample_size = int(round(min(num_bps) * num_samples[i] / num_bps[i]))
         split_index = int(round(subsample_size * train_test_split))
-        train_data.append(data[i][:split_index - 1])
-        test_data.append(data[i][split_index:])
+        train_data.append(data[i][split_index:])
+        test_data.append(data[i][:split_index - 1])
         
         train_data[i] = np.concatenate(train_data[i])
         test_data[i] = np.concatenate(test_data[i])
@@ -82,21 +82,27 @@ def get_full_data(file_names, train_test_split = .8, seq_size = 300):
         test_labels.append(tf.fill(np.shape(test_data[i])[0], i))
         print("THIS IS A TEST ALSO " + str(i))
     
-    train_seq_tensor = tf.convert_to_tensor(np.concatenate(train_data))
-    train_split_seq_tensor = tf.strings.bytes_split(train_seq_tensor)
+    data = None
+    parsed = None
 
-    test_seq_tensor = tf.convert_to_tensor(np.concatenate(test_data))
-    test_split_seq_tensor = tf.strings.bytes_split(test_seq_tensor)
+    train_data = tf.convert_to_tensor(np.concatenate(train_data))
+    #train_split_seq_tensor = tf.strings.bytes_split(train_data)
+
+    test_data = tf.convert_to_tensor(np.concatenate(test_data))
+    #test_split_seq_tensor = tf.strings.bytes_split(test_data)
+
+    print(tf.shape(train_data))
+    print(tf.shape(test_data))
 
     dnas = ["A", "C", "G", "T", "N"]
 
-    train_data = tf.stack([tf.equal(train_split_seq_tensor, s) for s in dnas], axis=-1)
+    train_data = tf.stack([tf.equal(train_data, s) for s in dnas], axis=-1)
     train_data = tf.cast(train_data, tf.float32)
-    train_data = train_data.to_tensor()
+    # train_data = train_data.to_tensor()
 
-    test_data = tf.stack([tf.equal(test_split_seq_tensor, s) for s in dnas], axis=-1)
+    test_data = tf.stack([tf.equal(test_data, s) for s in dnas], axis=-1)
     test_data = tf.cast(test_data, tf.float32)
-    test_data = test_data.to_tensor()
+    #test_data = test_data.to_tensor()
 
     train_labels = tf.concat(train_labels, axis = 0)
     test_labels = tf.concat(test_labels, axis = 0)
